@@ -1,4 +1,5 @@
-Dave-Clayton-Portfolio
+Dave Clayton Portfolio
 ======================
 
-My portfolio site
+My portfolio site. Currently a flat HTML5 file using Bootstrap.
+
