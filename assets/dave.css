@@ -1,0 +1,28 @@
+.intro {
+	padding: 3px 15px;
+}
+.intro a {
+	color: black;
+	font-weight: bold;
+	text-decoration: none;
+}
+.bottom {
+	text-align: center;
+}
+.more-popup {
+	border: 1px solid #8bf;
+	background: white;
+	width: 250px;
+	left: 400px;
+	position: absolute;
+	display: none;
+}
+.icon-picture {
+	cursor: pointer;
+}
+.contact-type {
+	color: black;
+}
+h3.folio {
+	margin: 0;
+}
