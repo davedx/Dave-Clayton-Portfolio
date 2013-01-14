@@ -23,6 +23,21 @@
 .contact-type {
 	color: black;
 }
+.contact-address {
+	list-style-type: none;
+	margin: 0;
+	overflow: auto;
+}
+.contact-address li {
+	float: left;
+	margin-right: 6px;
+}
 h3.folio {
 	margin: 0;
+}
+.clear {
+	clear: both;
+}
+li hr {
+	margin: 8px 0;
 }
