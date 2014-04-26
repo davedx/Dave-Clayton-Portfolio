@@ -8,11 +8,26 @@
   <meta name="description" content="Dave Clayton is a senior freelance developer, based in the Netherlands. He is professional, creative and experienced with web, mobile and game development.">
   <meta name="author" content="Dave Clayton">
   <link href="assets/dave.css" rel="stylesheet">
+  <script>
+  	window.onscroll = function(e) {
+  		var oy = window.pageYOffset;
+  		var p = oy/2500;
+  		var bgY = 1000*p;
+  		var back = document.getElementById('back');
+  		if(back) {
+  			back.style['-webkit-transform'] = 'translateY('+bgY+'px)';
+  		}
+  	}
+  </script>
 </head>
 <body>
 
+<div id="back">
+	<img src="assets/bg.jpg">
+</div>
+
 <section>
-	<article>
+	<article class="top-article">
 		<header>
 			<h2>Dave Clayton</h2>
 			<h3>Senior Freelance Developer</h3>
