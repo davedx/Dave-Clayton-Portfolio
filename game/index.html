@@ -18,15 +18,16 @@ body {
 }
 #overlay {
 	position: absolute;
-	width: 400px;
-	height: 200px;
+	width: 480px;
+	height: 80px;
 	top: 0;
 	right: 0;
 	background-color: rgba(100,100,100,0.3);
 	color: white;
-	font-family: "Tahoma";
+	font-family: "Tahoma", "Verdana";
 	font-size: 3em;
 	text-align: center;
+	padding-top: 15px;
 	-webkit-transform: transformZ(0);
 }
 #player {
@@ -45,6 +46,7 @@ body {
 	left: 0px;
 	bottom: 0px;
 	background-color: #432;
+	background-image: url("block.png");
 }
 </style>
 <script>
@@ -128,7 +130,8 @@ window.onload = function() {
 					} else {
 						num_active++;
 					}
-					if(block.data.x > 20 && block.data.x < 100) {
+					//if(block.data.x > 20 && block.data.x < 100) {
+					if(block.data.x > 15 && block.data.x < 105) {
 						blockUnderfoot = true;
 					}
 				}
@@ -235,7 +238,8 @@ window.onload = function() {
 <div class="block"></div>
 <div class="block"></div>
 <div class="block"></div>
-<div id="overlay"></div>
+<div id="overlay">
+</div>
 </div>
 </body>
 </html>
