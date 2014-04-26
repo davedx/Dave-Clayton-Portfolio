@@ -195,7 +195,8 @@ window.onload = function() {
 		setTranslate(player);
 		updateOverlay();
 	}
-	document.getElementById("container").onclick = function(e) {
+	var container = document.getElementById("container");
+	var click = function() {
 		if(gameState === 0) {
 			var mayJump = player.data.onGround && blockUnderfoot;
 			if(mayJump) {
@@ -205,6 +206,15 @@ window.onload = function() {
 			init();
 		}
 	};
+
+	if("ontouchstart" in window) {
+		container.addEventListener("touchstart", function(e) {
+			click();
+		});
+	} else {
+		container.onclick = click;
+	}
+
 	init();
 	animate(0);
 }
