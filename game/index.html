@@ -1,0 +1,230 @@
+<!doctype html>
+<html>
+<head>
+<style>
+body {
+	background-color: black;
+}
+* {
+	margin: 0; padding: 0;
+}
+#container {
+	position: relative;
+	width: 960px;
+	height: 640px;
+	background-color: #aaf;
+	margin: 0 auto;
+	overflow: hidden;
+}
+#overlay {
+	position: absolute;
+	width: 400px;
+	height: 200px;
+	top: 0;
+	right: 0;
+	background-color: rgba(100,100,100,0.3);
+	color: white;
+	font-family: "Tahoma";
+	font-size: 3em;
+	text-align: center;
+}
+#player {
+	position: absolute;
+	left: 0px;
+	bottom: 0px;
+	width: 50px;
+	height: 100px;
+	background-image: url("char.png");
+	background-position: 0 0;
+}
+.block {
+	position: absolute;
+	width: 80px;
+	height: 80px;
+	left: 0px;
+	bottom: 0px;
+	background-color: #432;
+}
+</style>
+<script>
+window.onload = function() {
+	// helpers
+	var setTranslate = function(block) {
+		block.style["-webkit-transform"] = "translate3d(" + block.data.x + "px, " + block.data.y + "px, 0)";
+	};
+
+	// define constanta
+	var BLOCK_SPEED = 0.6;
+	var JUMP_SPEED = 0.8;
+	//var MIN_BLOCKS = 11;
+
+	// define variables
+	var lt = 0;
+	var gameState;
+	var blockUnderfoot;
+	var maySpawnBlock;
+	var blockTimer;
+	var score;
+	var nextLength;
+	var nextGap;
+	var blocks = document.getElementsByClassName("block");
+	var overlay = document.getElementById("overlay");
+	var player = document.getElementById("player");
+
+	// initialise
+	var init = function() {
+		for(var i=0; i<blocks.length; i++) {
+			blocks[i]["data"] = {active: true, x: i*80, y: 0};
+			setTranslate(blocks[i]);
+		}
+		player["data"] = {x: 100, y: -300, jump: 0, onGround: false, frame: 0};
+		setTranslate(player);
+
+		gameState = 0;
+		blockUnderfoot = false;
+		maySpawnBlock = false;
+		blockTimer = 0;
+		score = 0;
+		nextLength = 5;
+		nextGap = 3;
+	};
+
+	var updateOverlay = function() {
+		if(gameState === 0) {
+			score += blockUnderfoot ? 1 : 2;
+			text = "SCORE: "+score;
+		} else {
+			text = "GAME OVER: "+score;
+		}
+		overlay.innerHTML = text;
+	};
+
+	var animate = function(t) {
+		var dt = t-lt;
+		lt = t;
+		blockTimer -= dt;
+		if(blockTimer <= 0) {
+			// if block moves at 0.5 pixels/ms, they move 80px in 160ms
+			// we need to spawn them every 160ms
+			blockTimer += 70.0/BLOCK_SPEED;
+			//console.log(blockTimer);
+			maySpawnBlock = true;
+			player.data.frame = 1 - player.data.frame;
+			player.style['background-position'] = player.data.frame === 0 ? "50px 0" : "0 0";
+		}
+		requestAnimationFrame(animate);
+		blockUnderfoot = false;
+
+		if(gameState === 0) {
+			var num_active = 0;
+			for(var i=0; i<blocks.length; i++) {
+				var block = blocks[i];
+				if(block.data.active) {
+					block.data.x = block.data.x - dt*BLOCK_SPEED;
+					setTranslate(block);
+					if(block.data.x < -80) {
+						block.data.active = false;
+					} else {
+						num_active++;
+					}
+					if(block.data.x > 20 && block.data.x < 100) {
+						blockUnderfoot = true;
+					}
+				}
+			}
+
+			if(maySpawnBlock) {
+				var blocks_spare = blocks.length - num_active;
+				// gap?
+				if(nextLength === 0) {
+					nextGap--;
+					if(nextGap === 0) {
+						nextLength = 2 + parseInt(Math.random() * 4);
+					}
+				} else if(nextLength > 0 && blocks_spare) {
+					for(var i=0; i<blocks.length; i++) {
+						var block = blocks[i];
+						if(!block.data.active) {
+							block.data.x = 960;
+							block.data.y = 0;
+							block.data.active = true;
+							//console.log("Activating block");
+							setTranslate(block);
+							nextLength--;
+							if(nextLength === 0) {
+								nextGap = 1 + parseInt(Math.random() * 4);
+							}
+							break;
+						}
+					}
+				}
+			}
+			maySpawnBlock = false;
+		}
+
+		switch(player.data.jump) {
+			case 0:
+				var falling = true;
+				var dy = dt*JUMP_SPEED;
+				if(player.data.y <= -80 && player.data.y+dy > -80) {
+					if(blockUnderfoot) {
+						falling = false;
+					}
+				}
+				if(falling) {
+					player.data.y += dy;
+					player.data.onGround = false;
+				} else {
+					player.data.y = -80;
+					player.data.onGround = true;
+				}
+				if(player.data.y > 200) {
+					gameState = 1;
+					player.data.y = 200;
+					player.data.jump = 0;
+				}
+				break;
+			case 1:
+				player.data.y -= dt*JUMP_SPEED;
+				if(player.data.y < -300) {
+					player.data.jump = 0;
+				}
+				break;
+		}
+		setTranslate(player);
+		updateOverlay();
+	}
+	document.getElementById("container").onclick = function(e) {
+		if(gameState === 0) {
+			var mayJump = player.data.onGround && blockUnderfoot;
+			if(mayJump) {
+				player.data.jump = 1;
+			}
+		} else {
+			init();
+		}
+	};
+	init();
+	animate(0);
+}
+</script>
+</head>
+<body>
+<div id="container">
+<div id="player"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div class="block"></div>
+<div id="overlay"></div>
+</div>
+</body>
+</html>
