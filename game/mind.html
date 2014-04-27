@@ -1,0 +1,209 @@
+<!doctype html>
+<html>
+<head>
+<style>
+body {
+	background-color: black;
+}
+* {
+	margin: 0; padding: 0;
+	text-transform: uppercase;
+	font-family: arial;
+}
+#container {
+	position: relative;
+	width: 1280px;
+	height: 640px;
+	background-color: #004;
+	margin: 0 auto;
+	overflow: hidden;
+}
+#entity {
+	width: 160px;
+	height: 160px;
+	background-color: #d89;
+	margin: 200px 0 0 200px;
+	padding: 10px;
+}
+#entity div {
+	width: 160px;
+	height: 80px;
+	text-align: center;
+	line-height: 80px;
+	-webkit-transition: all 2s;
+}
+#thinking {
+	background-color: #eee;
+}
+#feeling {
+	background-color: #666;
+}
+.cue {
+	width: 80px;
+	height: 80px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	background-color: #f00;
+	line-height: 80px;
+	text-align: center;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+<script>
+window.onload = function() {
+	var setTranslate = function(div) {
+		div.data["translate"] = "translate3d(" + div.data.x + "px, " + div.data.y + "px, 0)";
+		update(div);
+	};
+	var setScale = function(div) {
+		div.data["scale"] = "scale3d(" + div.data.sx + ", " + div.data.sy + ", 0)";
+		update(div);
+	};
+	var update = function(div) {
+		var t = div.data.translate + " " + div.data.scale;
+		div.style["-webkit-transform"] = t;
+	};
+
+	var container = document.getElementById("container");
+	var entity = document.getElementById("entity");
+	var thinking = document.getElementById("thinking");
+	var feeling = document.getElementById("feeling");
+	var lt = 0;
+
+	var createDiv = function(params) {
+		var div = document.createElement("div");
+		div.classList.add(params.className);
+		var x = params.x;
+		var y = params.y;
+		if(params.label) {
+			div.appendChild(document.createTextNode(params.label));
+		}
+		div['data'] = {
+			x: x,
+			y: y,
+			translate: "",
+			scale: ""
+		};
+		container.appendChild(div);
+		setTranslate(div);
+		return div;
+	};
+
+	var feelingColors = {
+		"scared": "#f00",
+		"happy": "#ff0",
+		"nothing": "#666"
+	};
+
+	var memories = [{
+		name: "birth",
+		cues: ["mother", "noise"],
+		feelings: "scared",
+		age: 1
+	}];
+	var think = {};
+	var feel = {};
+	var nodes = [];
+
+	var findMemory = function(cue) {
+		for(var i=0; i<memories.length; i++) {
+			if(_.contains(memories[i].cues, cue)) {
+				return memories[i];
+			}
+		}
+		return null;
+	};
+
+	var setFeeling = function(name) {
+		feel.feeling = name;
+		feeling.innerHTML = name;
+		feeling.style['background-color'] = feelingColors[name];
+	};
+
+	var activate = function(node) {
+		node.data.active = false;
+		console.log("Activating node");
+		if(node.data.type === "cue") {
+			var memory = findMemory(node.data.name);
+			if(memory) {
+				console.log("Found memory for cue "+node.data.name+": ", memory);
+				think.memory = memory;
+				thinking.style['background-color'] = node.data.color;
+				thinking.innerHTML = memory.name;
+				setTimeout(function() {
+					setFeelingFromThinking();
+				}, 1000);
+				setTimeout(function() {
+					think.memory = null;
+					thinking.style['background-color'] = "#eee";
+					thinking.innerHTML = "nothing";
+				}, 2000);
+			}
+		}
+	};
+
+	var setFeelingFromThinking = function() {
+		var memory = think.memory;
+		setFeeling(memory.feelings);
+		setTimeout(function() {
+			setFeeling("nothing");
+		}, 2500);
+	};
+
+	var create = function(type, label, color) {
+		var node = createDiv({x: 1000, y: 250, className: type, label: label});
+		node.data.active = true;
+		node.data.name = label;
+		node.data.type = type;
+		node.data.color = color;
+		nodes.push(node);
+		return node;
+	};
+
+	var animate = function(t) {
+		var dt = t-lt;
+		lt = t;
+		requestAnimationFrame(animate);
+		for(var i=0; i<nodes.length; i++) {
+			if(!nodes[i]) continue;
+			var node = nodes[i];
+			node.data.x -= dt*0.5;
+			setTranslate(node);
+			if(node.data.x < 300 && node.data.active) {
+				activate(node);
+			}
+			if(node.data.x < 0) {
+				node.parentNode.removeChild(node);
+				delete nodes[i];
+			}
+		}
+	}
+	var click = function(e) {
+		var x = e.offsetX;
+		var y = e.offsetY;
+	};
+
+	if("ontouchstart" in window) {
+		container.addEventListener("touchstart", function(e) {
+			click(e);
+		});
+	} else {
+		container.onclick = click;
+	}
+	create("cue", "mother", "#f00");
+
+	animate(0);
+}
+</script>
+</head>
+<body>
+<div id="container">
+	<div id="entity">
+		<div id="thinking">Nothing</div>
+		<div id="feeling">Nothing</div>
+	</div>
+</div>
+</div>
+</body>
+</html>

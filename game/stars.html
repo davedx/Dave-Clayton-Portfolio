@@ -16,8 +16,21 @@ body {
 	margin: 0 auto;
 	overflow: hidden;
 }
+#snv {
+	display: none;
+	width: 1px;
+	height: 1px;
+	border-radius: 1px;
+	position: absolute;
+	-webkit-transform: transformZ(0);
+	-webkit-transition: 8s opacity;
+	left: 0px;
+	top: 0px;
+	background-color: #ccf;
+}
 .star {
 	-webkit-transform: transformZ(0);
+	-webkit-transition: 5s opacity;
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -35,7 +48,15 @@ body {
 	border-radius: 10px;
 	opacity: 0.5;
 }
-#action {}
+#action {
+	display: none;
+	position: absolute;
+	top: 0;
+	left: 0;
+	font-size: 1.2em;
+	color: white;
+	background-color: black;
+}
 </style>
 <script>
 /*
@@ -55,12 +76,10 @@ window.onload = function() {
 	var setScale = function(block) {
 		block.data["scale"] = "scale3d(" + block.data.sx + ", " + block.data.sy + ", 0)";
 		update(block);
-		//console.log(block);
 	};
 	var update = function(block) {
 		var t = block.data.translate + " " + block.data.scale;
 		block.style["-webkit-transform"] = t;
-		//console.log(t);
 	};
 
 	// define variables
@@ -69,15 +88,17 @@ window.onload = function() {
 	var numRaces = 0;
 	var year = 0;
 	var timeSpeed = 2;
-	var numStars = 2000;
+	var numStars = 1000;
 	var container = document.getElementById("container");
 	var cursor = document.getElementById("cursor");
+	var action = document.getElementById("action");
+	var snv = document.getElementById("snv");
 	var races = [
 		{},
 		{color: "#f44", darkColor: "#811", power: 0},
 		{color: "#44f", darkColor: "#118", power: 0},
-		{color: "#4f4", darkColor: "#181", power: 0},
-		{color: "#ff2", darkColor: "#880", power: 0}
+		// {color: "#4f4", darkColor: "#181", power: 0},
+		// {color: "#ff2", darkColor: "#880", power: 0}
 	];
 	var log = function(msg) {
 		console.log("["+parseInt(year)+" CE] "+msg);
@@ -94,6 +115,8 @@ window.onload = function() {
 		starDiv['data'] = {
 			x: x,
 			y: y,
+			sx: 1,
+			sy: 1,
 			translate: "",
 			scale: "",
 			race: race,
@@ -141,6 +164,9 @@ window.onload = function() {
 		var dmin = 10000000;
 		var current = -1;
 		for(var i=0; i<stars.length; i++) {
+			if(stars[i].data.dead) {
+				continue;
+			}
 			if(params.notColonized === true && stars[i].data.race > 0) {
 				continue;
 			}
@@ -178,6 +204,9 @@ window.onload = function() {
 	};
 
 	var annex = function(id, race) {
+		if(stars[id].data.dead) {
+			return log("Race "+race+" reached "+id+" but there is nothing there but dust.");
+		}
 		var r2 = stars[id].data.race;
 		var p1 = races[race].power;
 		var p2 = races[r2].power;
@@ -194,6 +223,9 @@ window.onload = function() {
 	};
 
 	var colonize = function(id, race) {
+		if(stars[id].data.dead) {
+			return log("Race "+race+" reached "+id+" but there is nothing there but dust.");
+		}
 		log("Colony fleet of race "+race+" reached "+id+" and settled it.");
 		setColony(id, race);
 	};
@@ -243,6 +275,19 @@ window.onload = function() {
 
 	var updateStars = function(dt) {
 		for(var i=0; i<stars.length; i++) {
+			if(stars[i].data.exploding) {
+				stars[i].data.sy += dt*0.0005;
+				stars[i].data.sx = stars[i].data.sy;
+				setScale(stars[i]);
+				snv.data.sy += dt*0.05;
+				snv.data.sx = snv.data.sy;
+				setScale(snv);
+				if(stars[i].data.sy > 3) {
+					stars[i].data.exploding = false;
+					stars[i].style['opacity'] = 0;
+					snv.style['opacity'] = 0;
+				}
+			}
 			if(stars[i].data.race > 0) {
 				if(stars[i].data.colAge < 50000) {
 					stars[i].data.colAge += dt;
@@ -275,11 +320,17 @@ window.onload = function() {
 			var star = createStar({x: x, y: y, race: race});
 			stars.push(star);
 			setColony(stars.length-1, race);
-		} else {
+		} else if(!targetStar) {
 			// do something bad.
 			var star = findNearestStar({x: x, y: y});
-			console.log("Found star: ", star);
-
+			if(star) {
+				var s = stars[star.starId];
+				targetStar = s;
+				action.style['display'] = "block";
+				action.style['top'] = parseInt(s.data.y)+"px";
+				action.style['left'] = parseInt(s.data.x)+"px";
+				action.value = "choose";
+			}
 		}
 	};
 
@@ -290,11 +341,29 @@ window.onload = function() {
 	} else {
 		container.onclick = click;
 	}
-
-	var action = document.getElementById("action");
+	var targetStar;
 	action.onchange = function(e) {
-		console.log(this.value);
+		doAction(this.value);
 		e.preventDefault();
+		action.style['display'] = "none";
+		targetStar = null;
+	};
+	var doAction = function(action) {
+		if(action === "supernova") {
+			targetStar.data.exploding = true;
+			targetStar.data.sx = 0.1;
+			targetStar.data.sy = 0.1;
+			targetStar.style['width'] = "60px";
+			targetStar.style['height'] = "60px";
+			targetStar.style['top'] = "-30px";
+			targetStar.style['left'] = "-30px";
+			targetStar.style['border-radius'] = "30px";
+			targetStar.data.dead = true;
+			snv.style['display'] = "block";
+			snv['data'] = {sx: 3, sy: 3, x: targetStar.data.x, y: targetStar.data.y};
+			snv.style['opacity'] = 1.0;
+			setTranslate(snv);
+		}
 	};
 
 	init();
@@ -304,8 +373,10 @@ window.onload = function() {
 </head>
 <body>
 <div id="container">
+	<div id="snv"></div>
 	<div id="cursor"></div>
 	<select id="action">
+		<option value="choose">Choose Action:</option>
 		<option value="supernova">Supernova</option>
 		<option value="cancel">Cancel</option>
 	</select>
