@@ -273,6 +273,18 @@ window.onload = function() {
 		}
 	};
 
+	var wipeOutStars = function(x, y, r) {
+		for(var i=0; i<stars.length; i++) {
+			var dx = stars[i].data.x - x;
+			var dy = stars[i].data.y - y;
+			if(dx*dx + dy*dy < r*r) {
+				log("Star "+i+" annihilated out by supernova.");
+				stars[i].data.dead = true;
+				stars[i].style["display"] = "none";
+			}
+		}
+	};
+
 	var updateStars = function(dt) {
 		for(var i=0; i<stars.length; i++) {
 			if(stars[i].data.exploding) {
@@ -286,7 +298,11 @@ window.onload = function() {
 					stars[i].data.exploding = false;
 					stars[i].style['opacity'] = 0;
 					snv.style['opacity'] = 0;
+					wipeOutStars(stars[i].data.x, stars[i].data.y, 100);
 				}
+			}
+			if(stars[i].data.dead) {
+				continue;
 			}
 			if(stars[i].data.race > 0) {
 				if(stars[i].data.colAge < 50000) {
