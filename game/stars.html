@@ -1,0 +1,315 @@
+<!doctype html>
+<html>
+<head>
+<style>
+body {
+	background-color: black;
+}
+* {
+	margin: 0; padding: 0;
+}
+#container {
+	position: relative;
+	width: 1280px;
+	height: 640px;
+	background-color: #004;
+	margin: 0 auto;
+	overflow: hidden;
+}
+.star {
+	-webkit-transform: transformZ(0);
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	left: 0px;
+	top: 0px;
+	background-color: #ccf;
+}
+#cursor {
+	position: absolute;
+	left: -10px;
+	top: -10px;
+	width: 20px;
+	height: 20px;
+	border: 1px solid #eef;
+	border-radius: 10px;
+	opacity: 0.5;
+}
+#action {}
+</style>
+<script>
+/*
+1. sound track (Mala mix?)
+2. warfare
+3. game objective?
+4. nova/extinguish: destroy single star
+5. supernova: destroy neighboring stars too
+6. black hole: ?
+*/
+window.onload = function() {
+	// helpers
+	var setTranslate = function(block) {
+		block.data["translate"] = "translate3d(" + block.data.x + "px, " + block.data.y + "px, 0)";
+		update(block);
+	};
+	var setScale = function(block) {
+		block.data["scale"] = "scale3d(" + block.data.sx + ", " + block.data.sy + ", 0)";
+		update(block);
+		//console.log(block);
+	};
+	var update = function(block) {
+		var t = block.data.translate + " " + block.data.scale;
+		block.style["-webkit-transform"] = t;
+		//console.log(t);
+	};
+
+	// define variables
+	var lt = 0;
+	var stars = [];
+	var numRaces = 0;
+	var year = 0;
+	var timeSpeed = 2;
+	var numStars = 2000;
+	var container = document.getElementById("container");
+	var cursor = document.getElementById("cursor");
+	var races = [
+		{},
+		{color: "#f44", darkColor: "#811", power: 0},
+		{color: "#44f", darkColor: "#118", power: 0},
+		{color: "#4f4", darkColor: "#181", power: 0},
+		{color: "#ff2", darkColor: "#880", power: 0}
+	];
+	var log = function(msg) {
+		console.log("["+parseInt(year)+" CE] "+msg);
+	};
+
+	log("The universe is born.");
+
+	var createStar = function(spawn) {
+		var starDiv = document.createElement("div");
+		starDiv.classList.add('star');
+		var x = spawn.x || Math.random()*1280;
+		var y = spawn.y || Math.random()*640;
+		var race = spawn.race || 0;
+		starDiv['data'] = {
+			x: x,
+			y: y,
+			translate: "",
+			scale: "",
+			race: race,
+			colTime: 0,
+			targetedBy: {},
+			colAge: 0
+		};
+		if(race > 0) {
+			log("Created new starfaring civilisation, of race "+race);
+		}
+		container.appendChild(starDiv);
+		setTranslate(starDiv);
+		return starDiv;
+	};
+
+	// initialise
+	var init = function() {
+		for(var i=0; i<numStars; i++) {
+			//console.log("adding div");
+			var star = createStar({});
+			stars.push(star);
+		}
+		// star 0 is home
+		var home = stars[0];
+		cursor['data'] = {
+			x: home.data.x,
+			y: home.data.y,
+			sx: 1,
+			sy: 1,
+			translate: "",
+			scale: ""
+		};
+		cursor.animate = function(dt) {
+			cursor['data'].sx -= dt*0.001;
+			if(cursor['data'].sx < 0.3) {
+				cursor['data'].sx = 1;
+			}
+			cursor['data'].sy = cursor['data'].sx;
+			setScale(cursor);
+		};
+		setTranslate(cursor);
+	};
+
+	var findNearestStar = function(params) {
+		var dmin = 10000000;
+		var current = -1;
+		for(var i=0; i<stars.length; i++) {
+			if(params.notColonized === true && stars[i].data.race > 0) {
+				continue;
+			}
+			if(params.notTargetedBy > 0 && stars[i].data.race === params.notTargetedBy) {
+				continue;
+			}
+			if(params.notTargetedBy > 0 && stars[i].data.targetedBy[params.notTargetedBy]) {
+				continue;
+			}
+			var dx = stars[i].data.x - params.x;
+			var dy = stars[i].data.y - params.y;
+			var d = dx*dx + dy*dy;
+			if(d < dmin) {
+				current = i;
+				dmin = d;
+			}
+		}
+		if(current >= 0) {
+			return {starId: current, dist: dmin};
+		}
+		return null;
+	};
+
+	var setColony = function(id, race) {
+		stars[id].style["background-color"] = races[race].color;
+		stars[id].data.sx = stars[id].data.sy = 4;
+		setScale(stars[id]);
+		stars[id].data.colTime = 15000;
+		stars[id].data.race = race;
+		stars[id].data.colonized = true;
+		races[race].power++;
+		cursor.data.x = stars[id].data.x;
+		cursor.data.y = stars[id].data.y;
+		setTranslate(cursor);
+	};
+
+	var annex = function(id, race) {
+		var r2 = stars[id].data.race;
+		var p1 = races[race].power;
+		var p2 = races[r2].power;
+		if(p1 > p2) {
+			log("Race "+race+" annexed colony on "+id+" from race "+r2+"!");
+			setColony(id, race);
+			races[r2].power--;
+			if(races[r2].power === 0) {
+				log("Race "+race+" commits genocide against race "+r2+". Will there be a Watcher for the Dead?");
+			}
+		} else {
+			log("Race "+race+" colony fleet destroyed at destination by race "+r2+".");
+		}
+	};
+
+	var colonize = function(id, race) {
+		log("Colony fleet of race "+race+" reached "+id+" and settled it.");
+		setColony(id, race);
+	};
+
+	var tryToColonize = function(i) {
+		// find a nearby star to colonize
+		var sendShip = function(star) {
+			if(star.starId >= 0) {
+				stars[i].data.colTime = 5000;
+				(function(id, race, dist) {
+					var rd = Math.sqrt(dist);
+					var travelTime = rd*1500/timeSpeed;
+					//var travelTime = dist*50;
+					//log("Colonizing "+id+" from "+i+" in "+parseInt(travelTime/1000)+" years.");
+					stars[id].data.targetedBy[race] = true;
+					stars[id].data.sx = stars[id].data.sy = 3;
+					setScale(stars[id]);
+
+					setTimeout(function() {
+						// may have been colonized already - check!
+						if(stars[id].data.race === 0) {
+							colonize(id, race);
+						} else {
+							annex(id, race);
+						}
+						stars[id].data.targetedBy[race] = false;
+					}, travelTime);
+				})(star.starId, stars[i].data.race, star.dist);
+			}
+		};
+
+		var star = findNearestStar({
+			notColonized: true, notTargetedBy: stars[i].data.race, x: stars[i].data.x, y: stars[i].data.y
+		});
+		if(star) {
+			sendShip(star);
+		} else {
+			// find a inhabited system to expand into if no room is left!
+			var star = findNearestStar({
+				notTargetedBy: stars[i].data.race, x: stars[i].data.x, y: stars[i].data.y
+			});
+			if(star) {
+				sendShip(star);
+			}
+		}
+	};
+
+	var updateStars = function(dt) {
+		for(var i=0; i<stars.length; i++) {
+			if(stars[i].data.race > 0) {
+				if(stars[i].data.colAge < 50000) {
+					stars[i].data.colAge += dt;
+					stars[i].data.colTime -= dt;
+					if(stars[i].data.colTime <= 0) {
+						tryToColonize(i);
+					}
+					if(stars[i].data.colAge > 50000) {
+						log("Star system "+i+" falls into decadence and decline. No more colony ships will be built.");
+						stars[i].style["background-color"] = races[stars[i].data.race].darkColor;
+					}
+				}
+			}
+		}
+	};
+
+	var animate = function(t) {
+		var dt = t-lt;
+		lt = t;
+		year += (dt/1000)*timeSpeed;
+		requestAnimationFrame(animate);
+		cursor.animate(dt);
+		updateStars(dt);
+	}
+	var click = function(e) {
+		var x = e.offsetX;
+		var y = e.offsetY;
+		if(numRaces < races.length-1) {
+			var race = ++numRaces;
+			var star = createStar({x: x, y: y, race: race});
+			stars.push(star);
+			setColony(stars.length-1, race);
+		} else {
+			// do something bad.
+			var star = findNearestStar({x: x, y: y});
+			console.log("Found star: ", star);
+
+		}
+	};
+
+	if("ontouchstart" in window) {
+		container.addEventListener("touchstart", function(e) {
+			click(e);
+		});
+	} else {
+		container.onclick = click;
+	}
+
+	var action = document.getElementById("action");
+	action.onchange = function(e) {
+		console.log(this.value);
+		e.preventDefault();
+	};
+
+	init();
+	animate(0);
+}
+</script>
+</head>
+<body>
+<div id="container">
+	<div id="cursor"></div>
+	<select id="action">
+		<option value="supernova">Supernova</option>
+		<option value="cancel">Cancel</option>
+	</select>
+</div>
+</div>
+</body>
+</html>
