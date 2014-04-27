@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8">
 <style>
 body {
 	background-color: black;
@@ -47,7 +48,7 @@ body {
 	height: 20px;
 	border: 1px solid #eef;
 	border-radius: 10px;
-	opacity: 0.5;
+	opacity: 0;
 }
 #action {
 	display: none;
@@ -58,16 +59,23 @@ body {
 	color: white;
 	background-color: black;
 }
+#text {
+	width: 740px;
+	height: 100px;
+	margin: 200px auto;
+	-webkit-transition: opacity 2s;
+	color: white;
+	text-shadow: black 6px 3px;
+	font-family: "tahoma", "arial";
+	font-size: 1.5;
+	text-transform: uppercase;
+	text-align: center;
+	line-height: 100px;
+	z-index: 10000;
+	opacity: 1.0;
+}
 </style>
 <script>
-/*
-1. sound track (Mala mix?)
-2. warfare
-3. game objective?
-4. nova/extinguish: destroy single star
-5. supernova: destroy neighboring stars too
-6. black hole: ?
-*/
 window.onload = function() {
 	// helpers
 	var setTranslate = function(block) {
@@ -89,7 +97,9 @@ window.onload = function() {
 	var numRaces = 0;
 	var year = 0;
 	var timeSpeed = 2;
-	var numStars = 1000;
+	var numStars = 3000;
+	var state = 0;
+	var genocides = 0;
 	var container = document.getElementById("container");
 	var cursor = document.getElementById("cursor");
 	var action = document.getElementById("action");
@@ -98,14 +108,38 @@ window.onload = function() {
 		{},
 		{color: "#f44", darkColor: "#811", power: 0},
 		{color: "#44f", darkColor: "#118", power: 0},
-		// {color: "#4f4", darkColor: "#181", power: 0},
-		// {color: "#ff2", darkColor: "#880", power: 0}
+		{color: "#4f4", darkColor: "#181", power: 0},
+		{color: "#c90", darkColor: "#740", power: 0}
 	];
 	var log = function(msg) {
-		console.log("["+parseInt(year)+" CE] "+msg);
+		if(state === 0) {
+			console.log("["+parseInt(year)+" CE] "+msg);
+		}
+	};
+	var text = function(msg) {
+		var t = document.getElementById("text");
+		t.style['height'] = "100px";
+		t.innerHTML = msg;
+		t.style['opacity'] = 1;
+		setTimeout(function() {
+			t.style['opacity'] = 0;
+		}, 4000);
+		setTimeout(function() {
+			t.style['height'] = "0px";
+		}, 5000);
 	};
 
 	log("The universe is born.");
+	text("The universe is born.");
+	setTimeout(function() {
+		text("Click to create, and to destroy.");
+	}, 6000);
+	setTimeout(function() {
+		text("יהוה or Drake?"); 
+	}, 12000);
+	setTimeout(function() {
+		text("(Developer Console has a galactic newsfeed)"); 
+	}, 17000);	
 
 	var createStar = function(spawn) {
 		var starDiv = document.createElement("div");
@@ -199,6 +233,7 @@ window.onload = function() {
 		stars[id].data.race = race;
 		stars[id].data.colonized = true;
 		races[race].power++;
+		cursor.style['opacity'] = 0.5;
 		cursor.data.x = stars[id].data.x;
 		cursor.data.y = stars[id].data.y;
 		setTranslate(cursor);
@@ -228,6 +263,7 @@ window.onload = function() {
 			races[r2].power--;
 			if(races[r2].power === 0) {
 				log("Race "+race+" commits genocide against race "+r2+". Will there be a Watcher for the Dead?");
+				genocides++;
 			}
 		} else {
 			log("Race "+race+" colony fleet destroyed at destination by race "+r2+".");
@@ -289,7 +325,10 @@ window.onload = function() {
 			var dx = stars[i].data.x - x;
 			var dy = stars[i].data.y - y;
 			if(dx*dx + dy*dy < r*r) {
-				log("Star "+i+" annihilated out by supernova.");
+				log("Star "+i+" annihilated by supernova.");
+				if(stars[i].race > 0) {
+					races[stars[i].race].power--;
+				}
 				stars[i].data.dead = true;
 				stars[i].style["display"] = "none";
 			}
@@ -297,6 +336,7 @@ window.onload = function() {
 	};
 
 	var updateStars = function(dt) {
+		var alive = false;
 		for(var i=0; i<stars.length; i++) {
 			if(stars[i].data.exploding) {
 				stars[i].data.sy += dt*0.0005;
@@ -315,6 +355,10 @@ window.onload = function() {
 			if(stars[i].data.dead) {
 				continue;
 			}
+			if(state === 1) {
+				continue;
+			}
+			//alive = true;
 			if(stars[i].data.race > 0) {
 				if(stars[i].data.colAge < 50000) {
 					stars[i].data.colAge += dt;
@@ -329,6 +373,88 @@ window.onload = function() {
 				}
 			}
 		}
+		if(genocides >= 2 && state === 0) {
+			gameover();
+		}
+		if(!alive && state === 0) {
+			gameover();
+		}
+	};
+
+	var starsAlive = function() {
+		for(var i=0; i<stars.length; i++) {
+			if(stars[i].data.dead) {}
+			else {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	var gameover = function() {
+		var end = function() {
+			setTimeout(function() {
+				text("Everything seems to be lost. The galaxy has died...");
+				setTimeout(function() {
+					text("Every last star, destroyed by a supernova in the heat of a million suns...");
+				}, 5000);
+				setTimeout(function() {
+					text("Is this the end?");
+				}, 10000);
+				setTimeout(function() {
+					rebirth();
+				}, 15000);
+			}, 10000);
+		};
+		var explode = function(targetStar) {
+			targetStar.data.exploding = true;
+			targetStar.data.sx = 0.1;
+			targetStar.data.sy = 0.1;
+			targetStar.style['width'] = "60px";
+			targetStar.style['height'] = "60px";
+			targetStar.style['top'] = "-30px";
+			targetStar.style['left'] = "-30px";
+			targetStar.style['border-radius'] = "30px";
+			targetStar.data.dead = true;
+
+			snv['data'] = {sx: 3, sy: 3, x: targetStar.data.x, y: targetStar.data.y};
+			snv.style['opacity'] = 1.0;
+			setTranslate(snv);
+
+			setTimeout(function() {
+				if(starsAlive()) {
+					var i = Math.random()*stars.length-1;
+					var targetStar = stars[parseInt(i)];
+					explode(targetStar);
+				}
+			}, 10);
+		};
+
+		var i = Math.random()*stars.length-1;
+		var targetStar = stars[parseInt(i)];
+		explode(targetStar);
+		setTimeout(function() {
+			end();
+		}, 1000);
+
+		state = 1;
+		cursor.style['opacity'] = 0;
+	};
+
+	var rebirth = function() {
+		var star = createStar({x: 640, y: 320, race: 1});
+		setTimeout(function() {
+			text("Twinkle, twinkle, little star");
+		}, 5000);
+		setTimeout(function() {
+			text("How I wonder, what you are?");
+		}, 10000);
+		setTimeout(function() {
+			star.style['-webkit-transition'] = "all 25s ease-in";
+			star.data.x = 3000;
+			star.data.y = 100;
+			setTranslate(star);
+		}, 15000);
 	};
 
 	var animate = function(t) {
@@ -340,6 +466,10 @@ window.onload = function() {
 		updateStars(dt);
 	}
 	var click = function(e) {
+		console.log(e.target);
+		if(e.target.id !== "container") {
+			return;
+		}
 		var x = e.offsetX;
 		var y = e.offsetY;
 		if(numRaces < races.length-1) {
@@ -419,6 +549,7 @@ window.onload = function() {
 		<option value="blackhole">Black hole</option>
 		<option value="cancel">Cancel</option>
 	</select>
+	<div id="text"></div>
 </div>
 </div>
 </body>
