@@ -23,14 +23,15 @@ body {
 	border-radius: 1px;
 	position: absolute;
 	-webkit-transform: transformZ(0);
-	-webkit-transition: 8s opacity;
+	-webkit-transition: opacity 8s;
 	left: 0px;
 	top: 0px;
 	background-color: #ccf;
+	opacity: 1.0;
 }
 .star {
 	-webkit-transform: transformZ(0);
-	-webkit-transition: 5s opacity;
+	-webkit-transition: opacity 5s background-color 1s;
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -203,10 +204,21 @@ window.onload = function() {
 		setTranslate(cursor);
 	};
 
-	var annex = function(id, race) {
+	var verifyStar = function(id, race) {
 		if(stars[id].data.dead) {
-			return log("Race "+race+" reached "+id+" but there is nothing there but dust.");
+			if(stars[id].data.blackhole) {
+				log("Race "+race+" reached "+id+" but a black hole has formed, swallowing everything forever.");
+			} else {
+				log("Race "+race+" reached "+id+" but there is nothing there but dust.");
+			}
+			return false;
 		}
+		return true;
+	};
+
+	var annex = function(id, race) {
+		if(!verifyStar(id, race))
+			return;
 		var r2 = stars[id].data.race;
 		var p1 = races[race].power;
 		var p2 = races[r2].power;
@@ -223,9 +235,8 @@ window.onload = function() {
 	};
 
 	var colonize = function(id, race) {
-		if(stars[id].data.dead) {
-			return log("Race "+race+" reached "+id+" but there is nothing there but dust.");
-		}
+		if(!verifyStar(id, race))
+			return;
 		log("Colony fleet of race "+race+" reached "+id+" and settled it.");
 		setColony(id, race);
 	};
@@ -366,6 +377,10 @@ window.onload = function() {
 	};
 	var doAction = function(action) {
 		if(action === "supernova") {
+			if(snv.style['opacity'] != 0) {
+				return log("Supernova already in progress! Don't be such a sadist...");
+			}
+
 			targetStar.data.exploding = true;
 			targetStar.data.sx = 0.1;
 			targetStar.data.sy = 0.1;
@@ -379,6 +394,13 @@ window.onload = function() {
 			snv['data'] = {sx: 3, sy: 3, x: targetStar.data.x, y: targetStar.data.y};
 			snv.style['opacity'] = 1.0;
 			setTranslate(snv);
+		} else if (action === "blackhole") {
+			targetStar.data.blackhole = true;
+			targetStar.data.dead = true;
+			targetStar.data.sx = 3;
+			targetStar.data.sy = 3;
+			setScale(targetStar);
+			targetStar.style['background-color'] = "#000";
 		}
 	};
 
@@ -394,6 +416,7 @@ window.onload = function() {
 	<select id="action">
 		<option value="choose">Choose Action:</option>
 		<option value="supernova">Supernova</option>
+		<option value="blackhole">Black hole</option>
 		<option value="cancel">Cancel</option>
 	</select>
 </div>
