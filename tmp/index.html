@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+<head>
+	<meta name="viewport" content="width=320, initial-scale=1, maximum-scale=1">
+	<meta charset="utf-8">
+	<link href='http://fonts.googleapis.com/css?family=Playfair+Display:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+	<style type="text/css">
+	* {
+		font-family: "Playfair Display";
+	}
+	.heart {
+		font-family: verdana;
+		font-size: 75px;
+		margin-bottom: 50px;
+	}
+	.heart a {
+		text-decoration: none;
+		color: #800;
+	}
+	body {
+		font-size: 1.3em;
+		width: 320px;
+		background-color: white;
+		margin: 0;
+		padding: 0;
+	}
+	body > div {
+		width: 320px;
+		text-align: center;
+	}
+	#text1 {
+		background: white;
+		position: absolute;
+		top: 240px;
+		height: 420px;
+	}
+	#bg1 {
+		background: url("train_640.jpg");
+		background-size: 100%;
+		width: 320px;
+		height: 240px;
+		position: fixed;
+		z-index: -1;
+	}
+	#text2 {
+		background: white;
+		position: absolute;
+		top: 1020px;
+		height: 410px;
+	}
+	#bg2 {
+		background: url("eiffel_540.jpg");
+		background-size: 100%;
+		width: 320px;
+		height: 410px;
+		position: fixed;
+		display: none;
+		top: 0px;
+		z-index: -1;
+	}
+	#text3 {
+		background: white;
+		position: absolute;
+		height: 400px;
+		top: 1670px;
+	}
+	#bg3 {
+		background: url("cocktails_640.jpg");
+		background-size: 100%;
+		width: 320px;
+		height: 240px;
+		position: fixed;
+		display: none;
+		top: 0px;
+		z-index: -1;
+	}
+	#text4 {
+		background: white;
+		position: absolute;
+		top: 2480px;
+	}
+	#bg4 {
+		background: url("notre_lara_540.jpg");
+		background-size: 100%;
+		width: 320px;
+		height: 410px;
+		position: fixed;
+		display: none;
+		top: 0px;
+		z-index: -1;
+	}
+	#text5 {
+		background: white;
+		position: absolute;
+		top: 3200px;
+	}
+	</style>
+</head>
+<body id="bod">
+	<div id="text1">
+		<h3>Once upon a time...</h3>
+		<h4>Two lovers set out on a journey</h4>
+	</div>
+	<div class="bg" id="bg1"></div>
+	<div id="text2">
+		<h4>Star struck they wandered,</h4>
+		<h4>Past towers of iron</h4>
+	</div>
+	<div class="bg" id="bg2"></div>
+	<div id="text3">
+		<h3>Celebrating</h3>
+		<h4>In the city of lights</h4>
+	</div>
+	<div class="bg" id="bg3"></div>
+	<div id="text4">
+		<h4>From the <i>Sacré-Cœur</i>,</h4>
+		<h3>To the <i>Île de la Cité</i></h3>
+		<br>
+		<h5>Returning each year hasn't quite been possible</h5>
+		<h3>Because of so many other amazing holidays<h3>
+		<h4>But now it's time...</h4>
+		<h5>To go back</h5>
+		<p class="heart"><a href="pic.jpg">&#9829;</a></p>
+	</div>
+	<div class="bg" id="bg4"></div>
+</body>
+<script type="text/javascript">
+var body = document.getElementById("bod");
+var bgs = document.getElementsByClassName("bg");
+var curr;
+var toggleBgs = function(butNot) {
+	if(butNot === curr) {
+		return;
+	}
+	console.info("Switching to: "+butNot);
+	curr = butNot;
+	for(var i=0; i<bgs.length; i++) {
+		if(bgs[i].id !== butNot) {
+			bgs[i].style["display"] = "none";
+		} else {
+			bgs[i].style["display"] = "block";
+		}
+	}
+};
+window.onscroll = function(e) {
+	var top = body.scrollTop;
+  console.log('scrolling ', body.scrollTop);
+  if(top <= 240) {
+  	toggleBgs("bg1");
+  } else if(top > 240 && top < 1020) {
+  	toggleBgs("bg2");
+  } else if(top >= 1020 && top < 1670) {
+  	toggleBgs("bg3");
+  } else if(top >= 1670 && top < 2300) {
+  	toggleBgs("bg4");
+  }
+};
+</script>
+</html>
